@@ -61,6 +61,10 @@ library(devtools)
 * SQTBA gives every point on a trajectory the PM2.5 measured at arrival. The high values off the Norwegian coast come from one event (10 to 11 December 2022) and are treated as an outlier.
 * The reanalysis meteorology has a 2.5 degree resolution, which is coarse for the Irish Sea.
 
+## HYSPLIT details
+
+Available in HYSPLIT_details.pdf, including how trajectory analysis was completed online and locally.
+
 ## References
 
 * Stein, A.F., Draxler, R.R., Rolph, G.D., Stunder, B.J.B., Cohen, M.D. and Ngan, F. (2015). NOAA's HYSPLIT atmospheric transport and dispersion modeling system. *Bulletin of the American Meteorological Society*, 96. http://dx.doi.org/10.1175/BAMS-D-14-00110.1
