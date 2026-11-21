@@ -63,7 +63,7 @@ library(devtools)
 
 ## HYSPLIT details
 
-Available in HYSPLIT_details.pdf, including how trajectory analysis was completed online and locally.
+Available in HYSPLIT details.md, including how trajectory analysis was completed online and locally.
 
 ## References
 
