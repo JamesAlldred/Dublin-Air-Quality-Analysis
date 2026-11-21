@@ -1,33 +1,33 @@
 # HYSPLIT back Trajectories: how They Were Made
 
-_Dublin air quality project (Rathmines), November 2026. Paths are relative to the `dublin/` project folder, and `hysplit/` is gitignored as it contains setup data, not scripts._
+*Dublin air quality project (Rathmines), November 2026. Paths are relative to the `dublin/` project folder, and `hysplit/` is gitignored as it contains setup data, not scripts.*
 
 This covers the three trajectory products on the poster: (1) two case study runs on the NOAA website, (2) a full year of local runs for 2022 that feeds the SQTBA map, and (3) the trajectory frequency map made from the same 2022 file. All times are UTC.
 
 ## 1. Software
 
-| Item                                                          | Used for        | Notes                                                                                                                                                                                                                                                                                        |
-| ------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NOAA READY HYSPLIT trajectory page                            | Case studies    | https://www.ready.noaa.gov/HYSPLIT_traj.php, nothing to install                                                                                                                                                                                                                              |
-| HYSPLIT for Windows - Public (unregistered) Version(NOAA ARL) | 2022 local run  | Installed to `C:/HYSPLIT`. The trajectory program is `C:/HYSPLIT/exec/hyts_std.exe`. Requires other software to run, details available at: [https://www.ready.noaa.gov/HYSPLIT_hytrial.php](https://www.ready.noaa.gov/HYSPLIT_hytrial.php)<br><br>Version: **April 2025 Revision (v5.4.0)** |
-| R 4.6.1 and RStudio                                           | All analysis    |                                                                                                                                                                                                                                                                                              |
-| R packages                                                    | Trajectory work | `tidyverse`, `openair`, `devtools` (for `source_gist()`); figures also use `patchwork` and `ragg`                                                                                                                                                                                            |
-| `run_hysplit()`                                               | Local runs      | From the openair book, Appendix C. Loaded from David Carslaw's gist: https://gist.github.com/davidcarslaw/c67e33a04ff6e1be0cd7357796e4bdf5                                                                                                                                                   |
+| Item | Used for | Notes |
+|----|----|----|
+| NOAA READY HYSPLIT trajectory page | Case studies | <https://www.ready.noaa.gov/HYSPLIT_traj.php>, nothing to install |
+| HYSPLIT for Windows - Public (unregistered) Version(NOAA ARL) | 2022 local run | Installed to `C:/HYSPLIT`. The trajectory program is `C:/HYSPLIT/exec/hyts_std.exe`. Requires other software to run, details available at: <https://www.ready.noaa.gov/HYSPLIT_hytrial.php><br><br>Version: **April 2025 Revision (v5.4.0)** |
+| R 4.6.1 and RStudio | All analysis |  |
+| R packages | Trajectory work | `tidyverse`, `openair`, `devtools` (for `source_gist()`); figures also use `patchwork` and `ragg` |
+| `run_hysplit()` | Local runs | From the openair book, Appendix C. Loaded from David Carslaw's gist: <https://gist.github.com/davidcarslaw/c67e33a04ff6e1be0cd7357796e4bdf5> |
 
 ## 2. Data
 
-| Data                                                                               | Source                                                                                        | Stored in                                                                                                                                                         |
-| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hourly PM2.5 and NO2 (also O3, SO2, PM10) at Rathmines, 30 Jun 2020 to 30 Sep 2026 | 13 csv files downloaded from [https://airquality.ie/readings](https://airquality.ie/readings) | `data/split_data/`, merged into `data/rathAQMET.rds` by `data_setup.R`<br><br>Unlimited downloads, but has to be downloaded in 6 month intervals and merged later |
-| Hourly wind direction and speed, Dublin Airport                                    | GHCN station EII0000EIDW, `worldmet::import_ghcn_hourly()`                                    | Merged into `rathAQMET.rds.`<br><br>At time of download, only available up to 30/04/2026                                                                          |
-| Meteorology for HYSPLIT                                                            | NCEP/NCAR global reanalysis, one file per month (`RPYYYYMM.gbl`), 2.5 degree grid             | Web runs: chosen in the form. Local run: `hysplit/sqtba/TrajData/`                                                                                                |
-| Trajectory files                                                                   | Made in this workflow                                                                         | `hysplit/clean_tdump.txt`, `hysplit/polluted_tdump.txt`, `hysplit/sqtba/TrajData/traj_2022.rds`                                                                   |
+| Data | Source | Stored in |
+|----|----|----|
+| Hourly PM2.5 and NO2 (also O3, SO2, PM10) at Rathmines, 30 Jun 2020 to 30 Sep 2026 | 13 csv files downloaded from <https://airquality.ie/readings> | `data/split_data/`, merged into `data/rathAQMET.rds` by `data_setup.R`<br><br>Unlimited downloads, but has to be downloaded in 6 month intervals and merged later |
+| Hourly wind direction and speed, Dublin Airport | GHCN station EII0000EIDW, `worldmet::import_ghcn_hourly()` | Merged into `rathAQMET.rds.`<br><br>At time of download, only available up to 30/04/2026 |
+| Meteorology for HYSPLIT | NCEP/NCAR global reanalysis, one file per month (`RPYYYYMM.gbl`), 2.5 degree grid | Web runs: chosen in the form. Local run: `hysplit/sqtba/TrajData/` |
+| Trajectory files | Made in this workflow | `hysplit/clean_tdump.txt`, `hysplit/polluted_tdump.txt`, `hysplit/sqtba/TrajData/traj_2022.rds` |
 
 ## 3. Case Study Trajectories (NOAA Website)
 
 ### 3.1 Choosing the Two Cases (R)
 
-```R
+``` r
 # Daily means (wind direction is vector averaged), days with at least 75% data capture
 rath_daily <- timeAverage(rathAQMET, avg.time = 'day', data.thresh = 75, interval = 'hour')
 
@@ -53,15 +53,15 @@ low_sw <- rath_daily %>%
 
 ### 3.2 Running HYSPLIT on the Website
 
-1. Open https://www.ready.noaa.gov/HYSPLIT_traj.php, choose **Compute archive trajectories**, and keep the defaults (1 starting location, normal trajectory).
-2. Meteorology: **REANALYSIS (global, 1948 to present)**. Enter the location in decimal degrees (longitude west). The saved files show 53.332 N, 6.267 W. The station is at 53.322 N, 6.2672 W, about 1 km away, which is small next to the 2.5 degree grid.
-3. Archive file: `RP202303.gbl` (clean) or `RP202403.gbl` (dirty).
-4. Trajectory direction: **Backward**. Set this before entering the start time, because the form asks you to change the default start time after choosing it. One early run came out forward by mistake.
-5. Start time (UTC): 2023, 03, 22, hour 00 (clean) or 2024, 03, 10, hour 00 (dirty). This is the last arrival. Further trajectories start earlier.
-6. Total run time 72 hours. Start a new trajectory every 3 hours. Maximum number of trajectories 8. Start height 500 m above ground. Vertical motion: model vertical velocity (the default).
-7. Request the trajectory, wait for the figure to generate.
-8. For further figure customisation, the endpoints text file. Save the text files as `hysplit/clean_tdump.txt` and `hysplit/polluted_tdump.txt`.
-9. Check the header of each file: `readLines('hysplit/clean_tdump.txt', 12)`. It should say BACKWARD, list 8 start times (22 00, then 21 21, down to 21 03), and give 500.0 as the height.
+1.  Open <https://www.ready.noaa.gov/HYSPLIT_traj.php>, choose **Compute archive trajectories**, and keep the defaults (1 starting location, normal trajectory).
+2.  Meteorology: **REANALYSIS (global, 1948 to present)**. Enter the location in decimal degrees (longitude west). The saved files show 53.332 N, 6.267 W. The station is at 53.322 N, 6.2672 W, about 1 km away, which is small next to the 2.5 degree grid.
+3.  Archive file: `RP202303.gbl` (clean) or `RP202403.gbl` (dirty).
+4.  Trajectory direction: **Backward**. Set this before entering the start time, because the form asks you to change the default start time after choosing it. One early run came out forward by mistake.
+5.  Start time (UTC): 2023, 03, 22, hour 00 (clean) or 2024, 03, 10, hour 00 (dirty). This is the last arrival. Further trajectories start earlier.
+6.  Total run time 72 hours. Start a new trajectory every 3 hours. Maximum number of trajectories 8. Start height 500 m above ground. Vertical motion: model vertical velocity (the default).
+7.  Request the trajectory, wait for the figure to generate.
+8.  For further figure customisation, the endpoints text file. Save the text files as `hysplit/clean_tdump.txt` and `hysplit/polluted_tdump.txt`.
+9.  Check the header of each file: `readLines('hysplit/clean_tdump.txt', 12)`. It should say BACKWARD, list 8 start times (22 00, then 21 21, down to 21 03), and give 500.0 as the height.
 
 Web limits: 500 trajectories per day, and in practice a run returned at most 105 trajectories, with the earliest 23 truncated at the start of the run window. That is fine for 8 trajectories but not for a year, which is why section 4 runs locally.
 
@@ -69,7 +69,7 @@ Web limits: 500 trajectories per day, and in practice a run returned at most 105
 
 `read_tdump()` is defined in `fig2_trajectories.R`. It takes each arrival time from the start times in the file header (not the age column, which is counted from the first start) and returns the columns `date`, `date2`, `hour.inc`, `lat`, `lon` and `height`.
 
-```r
+``` r
 traj <- bind_rows(read_tdump('hysplit/clean_tdump.txt'),
                   read_tdump('hysplit/polluted_tdump.txt')) %>%
   left_join(select(rathAQMET, date, pm25), by = 'date')
@@ -84,7 +84,7 @@ trajPlot(traj, pollutant = 'pm25', cols = c('royalblue', 'firebrick'), linewidth
 
 A year needs all 12 monthly meteorology files plus the previous December, and good PM2.5 coverage.
 
-```r
+``` r
 list_met <- function(year) {   # which monthly files exist on NOAA's server?
   url <- sprintf('https://noaa-oar-arl-hysplit-pds.s3.amazonaws.com/?prefix=reanalysis/%d/', year)
   x <- paste(readLines(url, warn = FALSE), collapse = '')
@@ -108,7 +108,7 @@ Download the Windows version from NOAA ARL's HYSPLIT page (ready.noaa.gov) and i
 
 Each monthly file is about 110 to 125 MB. A failed download leaves a 0 byte file, so this version deletes failures.
 
-```r
+``` r
 getMet <- function(year, month, path_met) {
   base_url <- 'https://noaa-oar-arl-hysplit-pds.s3.amazonaws.com/reanalysis'
   for (yr_i in year) for (mo in month) {
@@ -133,7 +133,7 @@ getMet(yr, 1:12, met_dir)
 
 ### 4.4 Run the Trajectories (About 28 Minutes)
 
-```r
+``` r
 library(devtools)
 source_gist('https://gist.github.com/davidcarslaw/c67e33a04ff6e1be0cd7357796e4bdf5',
             filename = 'run_hysplit.R')
@@ -156,7 +156,7 @@ Skim the gist before running it, since `source_gist()` runs whatever it contains
 
 ### 4.5 Checks
 
-```r
+``` r
 year_traj %>% count(date, name = 'rows') %>% count(rows)    # every arrival has 73 rows
 year_traj %>% distinct(date) %>% summarise(arrivals = n(), first = min(date), last = max(date))
 
@@ -169,7 +169,7 @@ Result: 2,912 arrivals (1 Jan 00:00 to 30 Dec 21:00), 73 rows each (hourly point
 
 ### 4.6 Join PM2.5 at the Arrival Time
 
-```r
+``` r
 sqtba_data <- readRDS('hysplit/sqtba/TrajData/traj_2022.rds') %>%
   left_join(select(rathAQMET, date, pm25), by = 'date') %>%
   drop_na(pm25)
@@ -180,7 +180,7 @@ nrow(sqtba_data)              # 197,903 points (2,711 x 73)
 
 ## 5. SQTBA Map
 
-```r
+``` r
 trajLevel(sqtba_data, pollutant = 'pm25', statistic = 'sqtba',
           lat.inc = 0.5, lon.inc = 0.5, map.fill = FALSE)
 ```
@@ -189,7 +189,7 @@ SQTBA is simplified quantitative transport bias analysis (openair book, section 
 
 ## 6. Trajectory Frequency Map
 
-```r
+``` r
 freq_breaks <- c(0, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100)    # log spaced steps, % of the busiest cell
 freq_cols   <- hcl.colors(length(freq_breaks), 'Plasma', rev = TRUE)[-1]
 
@@ -201,7 +201,7 @@ trajLevel(sqtba_data, statistic = 'frequency', lat.inc = 0.5, lon.inc = 0.5,
 
 ## 7. Problems Met and Fixes
 
-| Problem                                                  | Cause                                                                       | Fix                                                                          |
-| -------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Arrivals missing for 31 May to 31 Jul 2025               | `RP202506.gbl` is not on the server (404) and an empty file was left behind | `list_met()` before choosing a year. `getMet()` now deletes failed downloads |
-| Web run capped at 105 trajectories, early ones truncated | Limit of the web form                                                       | Run locally                                                                  |
+| Problem | Cause | Fix |
+|----|----|----|
+| Arrivals missing for 31 May to 31 Jul 2025 | `RP202506.gbl` is not on the server (404) and an empty file was left behind | `list_met()` before choosing a year. `getMet()` now deletes failed downloads |
+| Web run capped at 105 trajectories, early ones truncated | Limit of the web form | Run locally |
