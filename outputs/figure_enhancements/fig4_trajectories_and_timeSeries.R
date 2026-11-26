@@ -156,6 +156,10 @@ p_dirty <- p_dirty + labs(tag = "4C")
 key_size   <- (text_size - 2) / ggplot2::.pt
 table_size <- (text_size - 2) / ggplot2::.pt
 
+# Table columns are right aligned (hjust = 1) so the last column cannot spill
+# past the right edge of the box.
+col_x <- c(0.46, 0.60, 0.96)
+
 key_bc <- ggplot() +
   annotate("text", x = 0.04, y = 0.92, label = "Key for panels 4B and 4C",
            hjust = 0, fontface = "bold", size = key_size) +
@@ -173,28 +177,34 @@ key_bc <- ggplot() +
   annotate("text", x = 0.04, y = 0.44,
            label = "Mean (µg/m³)", hjust = 0,
            fontface = "bold", size = table_size) +
-  annotate("text", x = c(0.52, 0.68, 0.87), y = 0.44,
-           label = c("B", "C", "Change vs B"), hjust = 0.5,
+  annotate("text", x = col_x, y = 0.44,
+           label = c("B", "C", "Change vs B"), hjust = 1,
            fontface = "bold", size = table_size) +
   annotate("text", x = 0.04, y = c(0.30, 0.16),
            label = c("PM₂.₅", "NO₂"), hjust = 0,
            size = table_size) +
-  annotate("text", x = c(0.52, 0.68, 0.87), y = 0.30,
+  annotate("text", x = col_x, y = 0.30,
            label = c(sprintf("%.1f", period_b$pm25), sprintf("%.1f", period_c$pm25),
-                     sprintf("%+.1f%%", relative_change$pm25)), hjust = 0.5,
+                     sprintf("%+.1f%%", relative_change$pm25)), hjust = 1,
            size = table_size) +
-  annotate("text", x = c(0.52, 0.68, 0.87), y = 0.16,
+  annotate("text", x = col_x, y = 0.16,
            label = c(sprintf("%.1f", period_b$no2), sprintf("%.1f", period_c$no2),
-                     sprintf("%+.1f%%", relative_change$no2)), hjust = 0.5,
+                     sprintf("%+.1f%%", relative_change$no2)), hjust = 1,
            size = table_size) +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+  # lower limit raised from 0 to 0.06 to trim the empty strip under the table
+  coord_cartesian(xlim = c(0, 1), ylim = c(0.06, 1), expand = FALSE) +
   theme_void() +
   theme(plot.background = element_rect(fill = "white", colour = "grey70", linewidth = 0.4),
         plot.margin = margin(4, 4, 4, 4))
 
 ## Layout ---------------------------------
 
-top_row    <- (p_map | key_bc) + plot_layout(widths = c(2.4, 1))
+# Spacers stop patchwork stretching the key box to the full height of the map.
+# The middle number (2.4) sets the box height relative to the spacers.
+key_col <- (plot_spacer() / key_bc / plot_spacer()) +
+  plot_layout(heights = c(1, 2.4, 1))
+
+top_row    <- (p_map | key_col) + plot_layout(widths = c(2.4, 1))
 bottom_row <- p_clean | p_dirty
 
 combined <- ((top_row / bottom_row) +
@@ -208,6 +218,6 @@ print(combined)
 ## Save as png ------
 save_fig <- TRUE
 if (save_fig) {
-  ggsave(file.path(fig_dir, "fig4_rearranged.png"), combined,
+  ggsave(file.path(fig_dir, "fig4_traj_time.png"), combined,
          width = fig_w, height = fig_h, dpi = 600)
 }
